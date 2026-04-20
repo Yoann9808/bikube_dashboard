@@ -152,8 +152,12 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchMetrics();
-    fetchActivity(activityPeriod);
+    const loadData = async () => {
+      await fetchMetrics();
+      await fetchActivity(activityPeriod);
+    };
+
+    loadData();
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -161,9 +165,9 @@ export default function Dashboard() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'conversations' },
-        () => {
-          fetchMetrics();
-          fetchActivity(activityPeriod);
+        async () => {
+          await fetchMetrics();
+          await fetchActivity(activityPeriod);
         }
       )
       .subscribe();
@@ -266,7 +270,7 @@ export default function Dashboard() {
                         : 'bg-[var(--bg2)] text-[var(--text2)]'
                     }`}
                   >
-                    Aujourd'hui
+                    Aujourd&apos;hui
                   </button>
                   <button
                     onClick={() => {

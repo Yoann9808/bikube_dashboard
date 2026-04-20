@@ -12,17 +12,24 @@ import ConversationThread from '@/components/ConversationThread';
 import RealtimeIndicator from '@/components/RealtimeIndicator';
 
 export default function Conversations() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://dummy.supabase.co') {
+  // Check environment variables first
+  const hasValidConfig = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://dummy.supabase.co';
+
+  if (!hasValidConfig) {
     return (
       <div className="h-screen flex items-center justify-center bg-[var(--bg)] text-[var(--text)]">
         <div className="text-center">
           <h1 className="text-2xl font-serif text-[var(--accent)] mb-4">Bikube</h1>
-          <p className="text-[var(--text2)]">Veuillez configurer vos variables d'environnement Supabase dans .env.local</p>
+          <p className="text-[var(--text2)]">Veuillez configurer vos variables d&apos;environnement Supabase dans .env.local</p>
         </div>
       </div>
     );
   }
 
+  return <ConversationsContent />;
+}
+
+function ConversationsContent() {
   const [conversations, setConversations] = useState<DashboardConversation[]>([]);
   const [messages, setMessages] = useState<Conversation[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
@@ -60,15 +67,19 @@ export default function Conversations() {
   };
 
   useEffect(() => {
-    fetchConversations();
+    const loadData = async () => {
+      await fetchConversations();
 
-    // Check for selected phone from localStorage (from dashboard)
-    const storedPhone = localStorage.getItem('selectedPhone');
-    if (storedPhone) {
-      setSelectedPhone(storedPhone);
-      fetchMessages(storedPhone);
-      localStorage.removeItem('selectedPhone');
-    }
+      // Check for selected phone from localStorage (from dashboard)
+      const storedPhone = localStorage.getItem('selectedPhone');
+      if (storedPhone) {
+        setSelectedPhone(storedPhone);
+        await fetchMessages(storedPhone);
+        localStorage.removeItem('selectedPhone');
+      }
+    };
+
+    loadData();
 
     // Subscribe to new messages
     const channel = supabase
@@ -76,11 +87,11 @@ export default function Conversations() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'conversations' },
-        (payload) => {
+        async (payload) => {
           console.log('Change received!', payload);
-          fetchConversations(); // Refetch list on any change
+          await fetchConversations(); // Refetch list on any change
           if (selectedPhone && (payload.new as Conversation)?.phone_number === selectedPhone) {
-            fetchMessages(selectedPhone); // Refetch messages if for selected phone
+            await fetchMessages(selectedPhone); // Refetch messages if for selected phone
           }
         }
       )

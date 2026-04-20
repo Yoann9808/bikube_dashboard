@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 type DateFilter = 'today' | '7days' | 'all';
 
 interface FilterBarProps {
@@ -36,7 +34,7 @@ export default function FilterBar({
           onChange={(e) => onDateFilterChange(e.target.value as DateFilter)}
           className="px-3 py-2 bg-white border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
         >
-          <option value="today">Aujourd'hui</option>
+          <option value="today">Aujourd&apos;hui</option>
           <option value="7days">7 derniers jours</option>
           <option value="all">Tout</option>
         </select>
