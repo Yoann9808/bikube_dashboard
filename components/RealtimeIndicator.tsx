@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase';
 
 export default function RealtimeIndicator() {
   const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
-    const channel = supabase.channel('realtime-indicator');
+    const channel = getSupabaseClient().channel('realtime-indicator');
 
     channel
       .on('system', { event: 'CHANNEL_JOIN' }, () => setIsOnline(true))
@@ -16,7 +16,7 @@ export default function RealtimeIndicator() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      getSupabaseClient().removeChannel(channel);
     };
   }, []);
 

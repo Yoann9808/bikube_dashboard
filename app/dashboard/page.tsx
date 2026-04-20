@@ -14,7 +14,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { MessageSquare, TrendingUp, AlertTriangle, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase';
 import Sidebar from '@/components/Sidebar';
 import {
   getConversationsToday,
@@ -118,7 +118,7 @@ export default function Dashboard() {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        const { data, error } = await supabase
+        const { data, error } = await getSupabaseClient()
           .from('conversations')
           .select('created_at')
           .gte('created_at', sevenDaysAgo.toISOString());
@@ -127,7 +127,7 @@ export default function Dashboard() {
 
         // Group by day
         const dailyData: { [day: string]: number } = {};
-        data?.forEach((item) => {
+        (data as { created_at: string }[])?.forEach((item) => {
           const day = new Date(item.created_at).toISOString().split('T')[0];
           dailyData[day] = (dailyData[day] || 0) + 1;
         });
@@ -160,7 +160,7 @@ export default function Dashboard() {
     loadData();
 
     // Subscribe to realtime updates
-    const channel = supabase
+    const channel = getSupabaseClient()
       .channel('dashboard-updates')
       .on(
         'postgres_changes',
@@ -173,7 +173,7 @@ export default function Dashboard() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      getSupabaseClient().removeChannel(channel);
     };
   }, [activityPeriod]);
 

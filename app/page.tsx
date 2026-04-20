@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase';
 import { Conversation, DashboardConversation } from '@/lib/types';
 import Sidebar from '@/components/Sidebar';
 import FilterBar from '@/components/FilterBar';
@@ -39,7 +39,7 @@ function ConversationsContent() {
 
   // Fetch dashboard conversations
   const fetchConversations = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseClient()
       .from('dashboard_conversations')
       .select('*')
       .order('last_message_at', { ascending: false });
@@ -53,7 +53,7 @@ function ConversationsContent() {
 
   // Fetch messages for selected phone
   const fetchMessages = async (phone: string) => {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseClient()
       .from('conversations')
       .select('*')
       .eq('phone_number', phone)
@@ -82,7 +82,7 @@ function ConversationsContent() {
     loadData();
 
     // Subscribe to new messages
-    const channel = supabase
+    const channel = getSupabaseClient()
       .channel('conversations-changes')
       .on(
         'postgres_changes',
@@ -98,7 +98,7 @@ function ConversationsContent() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      getSupabaseClient().removeChannel(channel);
     };
   }, [selectedPhone]);
 

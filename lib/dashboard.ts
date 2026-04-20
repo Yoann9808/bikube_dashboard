@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabaseClient } from './supabase';
 
 export interface HourlyActivity {
   hour: number;
@@ -18,7 +18,7 @@ export async function getConversationsToday(): Promise<number> {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
-  const { count, error } = await supabase
+  const { count, error } = await getSupabaseClient()
     .from('conversations')
     .select('id', { count: 'exact', head: true })
     .gte('created_at', startOfDay.toISOString())
@@ -33,7 +33,7 @@ export async function getMessagesToday(): Promise<number> {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
-  const { count, error } = await supabase
+  const { count, error } = await getSupabaseClient()
     .from('conversations')
     .select('id', { count: 'exact', head: true })
     .gte('created_at', startOfDay.toISOString());
@@ -47,7 +47,7 @@ export async function getEscalationRate(): Promise<number> {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from('dashboard_conversations')
     .select('has_escalade')
     .gte('last_message_at', sevenDaysAgo.toISOString());
@@ -55,13 +55,13 @@ export async function getEscalationRate(): Promise<number> {
   if (error) throw error;
   if (!data || data.length === 0) return 0;
 
-  const escalated = data.filter(item => item.has_escalade).length;
+  const escalated = (data as { has_escalade: boolean }[]).filter(item => item.has_escalade).length;
   return Math.round((escalated / data.length) * 100);
 }
 
 // Escalades en attente
 export async function getPendingEscalations(): Promise<Escalation[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from('dashboard_conversations')
     .select('*')
     .eq('has_escalade', true)
@@ -79,7 +79,7 @@ export async function getHourlyActivity(targetDate?: Date): Promise<HourlyActivi
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from('conversations')
     .select('created_at')
     .gte('created_at', startOfDay.toISOString())
@@ -89,7 +89,7 @@ export async function getHourlyActivity(targetDate?: Date): Promise<HourlyActivi
 
   // Group by hour
   const hourlyData: { [hour: number]: number } = {};
-  data?.forEach((item) => {
+  (data as { created_at: string }[])?.forEach((item) => {
     const hour = new Date(item.created_at).getHours();
     hourlyData[hour] = (hourlyData[hour] || 0) + 1;
   });
@@ -112,7 +112,7 @@ export async function getConversationsYesterday(): Promise<number> {
   const endOfYesterday = new Date(yesterday);
   endOfYesterday.setHours(23, 59, 59, 999);
 
-  const { count, error } = await supabase
+  const { count, error } = await getSupabaseClient()
     .from('conversations')
     .select('id', { count: 'exact', head: true })
     .gte('created_at', startOfYesterday.toISOString())
